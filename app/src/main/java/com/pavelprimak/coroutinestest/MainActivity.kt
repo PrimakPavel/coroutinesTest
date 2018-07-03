@@ -4,11 +4,8 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.widget.Button
 import android.widget.TextView
-import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.*
 import kotlinx.coroutines.experimental.android.UI
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
 import okhttp3.*
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -26,9 +23,20 @@ class MainActivity : AppCompatActivity() {
     private val btn3: Button by lazy {
         findViewById<Button>(R.id.btn_launch_with_return_value)
     }
+
+    private val btnStart: Button by lazy {
+        findViewById<Button>(R.id.btn_start_job)
+    }
+
+    private val btnStop: Button by lazy {
+        findViewById<Button>(R.id.btn_stop_job)
+    }
+
     private val textView: TextView by lazy {
         findViewById<TextView>(R.id.text)
     }
+
+    private var job: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +63,13 @@ class MainActivity : AppCompatActivity() {
                 textView.text = data
             }
         }
+
+        btnStart.setOnClickListener {
+            startJob()
+        }
+        btnStop.setOnClickListener {
+            stopJob()
+        }
     }
 
     private suspend fun setTextAfterDelay(seconds: Long, text: String) {
@@ -70,7 +85,7 @@ class MainActivity : AppCompatActivity() {
         return suspendCoroutine { cont ->
             val client = OkHttpClient()
             val request = Request.Builder()
-                    .url("https://jsonplaceholder.typicode.com/posts")
+                    .url("https://jsonplaceholder.typicode.com/users")
                     .build()
 
             client.newCall(request).enqueue(object : Callback {
@@ -82,6 +97,29 @@ class MainActivity : AppCompatActivity() {
                     cont.resume(response.body()?.string() ?: "")
                 }
             })
+        }
+    }
+
+    private fun startJob() {
+        val startTime = System.currentTimeMillis()
+        if (job == null)
+        job = launch {
+            var nextPrintTime = startTime
+            var i = 0
+            while (isActive) {
+                if (System.currentTimeMillis() >= nextPrintTime) {
+                    launch(UI) { textView.text = i++.toString() }
+                    nextPrintTime += 1000L
+                }
+            }
+        }
+    }
+
+    private fun stopJob() {
+        launch(UI) {
+            job?.cancelAndJoin()
+            job = null
+            textView.text = "Cancelled"
         }
     }
 }
