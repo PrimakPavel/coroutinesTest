@@ -85,7 +85,7 @@ class MainActivity : AppCompatActivity() {
         return suspendCoroutine { cont ->
             val client = OkHttpClient()
             val request = Request.Builder()
-                    .url("https://jsonplaceholder.typicode.com/users")
+                    .url("https://lookup.binlist.net/45717360")
                     .build()
 
             client.newCall(request).enqueue(object : Callback {
